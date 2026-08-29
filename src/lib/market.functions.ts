@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { runAnalysis, runDashboard, runAgentTurn, runSearch } from "./analysis.server";
+import { runAnalysis, runDashboard, runAgentTurn, runSearch, runQuotes } from "./analysis.server";
 
 const AnalyzeInput = z.object({
   query: z.string().min(1),
@@ -30,3 +30,7 @@ const AgentInput = z.object({
 export const askAgent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AgentInput.parse(d))
   .handler(async ({ data }) => runAgentTurn(data));
+
+export const getQuotes = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ symbols: z.array(z.string()).max(30) }).parse(d))
+  .handler(async ({ data }) => runQuotes(data.symbols));

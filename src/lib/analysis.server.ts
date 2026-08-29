@@ -244,3 +244,10 @@ Rules: equities only — never index, F&O or forex. Be concrete with numbers. Ke
   );
   return { reply };
 }
+
+export async function runQuotes(symbols: string[]) {
+  const quotes = await mapLimited(symbols, 6, (s) =>
+    fetchQuoteLite(s, UNIVERSE_BY_SYMBOL.get(s)?.name ?? s.replace(/\.(NS|BO)$/i, "")),
+  );
+  return quotes.filter((q): q is QuoteLite => q !== null);
+}
