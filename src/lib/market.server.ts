@@ -43,8 +43,8 @@ export async function fetchChart(symbol: string, range = "2y", interval = "1d"):
     symbol: r.meta?.symbol ?? symbol,
     currency: r.meta?.currency ?? "INR",
     exchange: r.meta?.fullExchangeName ?? "NSE",
-    price: r.meta?.regularMarketPrice ?? candles[candles.length - 1].c,
-    previousClose: r.meta?.chartPreviousClose ?? candles[candles.length - 2]?.c ?? candles[0].c,
+    price: r.meta?.regularMarketPrice ?? candles[candles.length - 1]!.c,
+    previousClose: r.meta?.chartPreviousClose ?? candles[candles.length - 2]?.c ?? candles[0]!.c,
     candles,
   };
 }
