@@ -77,7 +77,7 @@ export async function runAnalysis(input: {
   const known = UNIVERSE_BY_SYMBOL.get(hit.symbol);
   const sector = known?.sector ?? hit.sector ?? "Other";
   const industry = known?.industry ?? hit.industry ?? sector;
-  const drivers = SECTOR_DRIVERS[sector] ?? SECTOR_DRIVERS.Other;
+  const drivers = SECTOR_DRIVERS[sector] ?? SECTOR_DRIVERS["Other"]!;
 
   const peerEntries = competitorsFor(hit.symbol, known?.industry, sector);
   const [peers, search] = await Promise.all([
@@ -95,14 +95,14 @@ export async function runAnalysis(input: {
           direction: s.direction,
           rsi: s.rsi,
           topPattern: top?.name ?? null,
-        } satisfies Peer;
+        } as Peer;
       } catch {
         return null;
       }
     }),
     fetchSearch(hit.name).catch(() => ({ hits: [], news: [] as NewsItem[] })),
   ]);
-  const cleanPeers = peers.filter((p): p is Peer => p !== null);
+  const cleanPeers = peers.filter((p): p is Peer => p !== null) as Peer[];
 
   const patternText = snapshot.patterns
     .map((p) => `- ${p.name} [${p.kind}, weight ${p.strength}]: ${p.detail}`)

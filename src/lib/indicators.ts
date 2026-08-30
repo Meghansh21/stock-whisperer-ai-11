@@ -25,7 +25,10 @@ export function ema(v: number[], p: number): (number | null)[] {
   const out: (number | null)[] = [];
   let prev: number | null = null;
   v.forEach((x, i) => {
-    if (i + 1 < p) return out.push(null);
+    if (i + 1 < p) {
+      out.push(null);
+      return;
+    }
     if (prev === null) prev = v.slice(0, p).reduce((a, b) => a + b, 0) / p;
     else prev = x * k + prev * (1 - k);
     out.push(prev);
@@ -38,7 +41,7 @@ export function rsi(v: number[], p = 14): (number | null)[] {
   let g = 0;
   let l = 0;
   for (let i = 1; i < v.length; i++) {
-    const d = v[i] - v[i - 1];
+    const d = v[i]! - v[i - 1]!;
     const up = Math.max(d, 0);
     const dn = Math.max(-d, 0);
     if (i <= p) {
@@ -93,7 +96,7 @@ export function bollinger(v: number[], p = 20, k = 2) {
   return { mid, upper, lower, width };
 }
 
-const last = <T,>(a: T[]) => a[a.length - 1];
+const last = <T,>(a: T[]) => a[a.length - 1] as T;
 const pct = (a: number, b: number) => ((a - b) / b) * 100;
 
 /** Pivot highs/lows used for structural pattern recognition. */
@@ -190,11 +193,11 @@ export function detectPatterns(c: Candle[]): Pattern[] {
 
   // --- Higher highs / higher lows structure
   if (hi.length >= 2 && lo.length >= 2) {
-    const hh = last(hi).p > hi[hi.length - 2].p;
-    const hl = last(lo).p > lo[lo.length - 2].p;
+    const hh = last(hi).p > hi[hi.length - 2]!.p;
+    const hl = last(lo).p > lo[lo.length - 2]!.p;
     if (hh && hl) out.push({ name: "Higher Highs & Higher Lows", kind: "bullish", strength: 0.7, detail: "Textbook uptrend market structure." });
-    const lh = last(hi).p < hi[hi.length - 2].p;
-    const ll = last(lo).p < lo[lo.length - 2].p;
+    const lh = last(hi).p < hi[hi.length - 2]!.p;
+    const ll = last(lo).p < lo[lo.length - 2]!.p;
     if (lh && ll) out.push({ name: "Lower Highs & Lower Lows", kind: "bearish", strength: 0.7, detail: "Downtrend structure — each rally is being sold." });
   }
 
