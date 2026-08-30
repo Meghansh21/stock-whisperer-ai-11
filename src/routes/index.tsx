@@ -190,7 +190,7 @@ function Dashboard() {
         {holdings.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No positions yet.{" "}
-            <Link to="/analyze" className="text-primary underline underline-offset-4">
+            <Link to="/analyze" search={{ q: undefined }} className="text-primary underline underline-offset-4">
               Analyse a stock
             </Link>{" "}
             and add the suggested position.

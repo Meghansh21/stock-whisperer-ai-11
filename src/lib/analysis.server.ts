@@ -228,7 +228,7 @@ export async function runAgentTurn(input: {
   messages: { role: "user" | "assistant"; content: string }[];
   capital: number;
   profile: RiskProfile;
-  contextSymbol?: string;
+  contextSymbol?: string | undefined;
 }) {
   const rule = RISK_RULES[input.profile];
   const transcript = input.messages

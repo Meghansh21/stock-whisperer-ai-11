@@ -14,7 +14,7 @@ import { RISK_RULES, inr } from "@/lib/risk";
 
 export const Route = createFileRoute("/coach")({
   validateSearch: (s: Record<string, unknown>) => ({
-    symbol: typeof s.symbol === "string" ? s.symbol : undefined,
+    symbol: typeof s['symbol'] === 'string' ? (s['symbol'] as string) : undefined,
   }),
   head: () => ({
     meta: [
