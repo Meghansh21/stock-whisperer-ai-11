@@ -4,11 +4,45 @@ import type { Candle } from "./indicators";
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36";
 
-async function yf<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
-  if (!res.ok) throw new Error(`Market data request failed (${res.status})`);
-  return (await res.json()) as T;
+// Small in-process response cache: the free feed rate-limits aggressively (429),
+// and small-cap daily data does not need sub-minute freshness.
+const cache = new Map<string, { at: number; value: unknown }>();
+const inflight = new Map<string, Promise<unknown>>();
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function yfRaw<T>(url: string): Promise<T> {
+  let lastErr: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // Rotate between the two public hosts — their rate-limit buckets differ.
+    const target = attempt === 0 ? url : url.replace("query1.", "query2.").replace("query2.", attempt === 1 ? "query1." : "query2.");
+    const res = await fetch(target, { headers: { "User-Agent": UA, Accept: "application/json" } });
+    if (res.ok) return (await res.json()) as T;
+    lastErr = new Error(
+      res.status === 429
+        ? "Market data feed is rate limiting us right now — wait a few seconds and retry."
+        : `Market data request failed (${res.status})`,
+    );
+    if (res.status !== 429 && res.status < 500) break;
+    await sleep(600 * (attempt + 1));
+  }
+  throw lastErr ?? new Error("Market data request failed");
 }
+
+async function yf<T>(url: string, ttlMs = 5 * 60_000): Promise<T> {
+  const hit = cache.get(url);
+  if (hit && Date.now() - hit.at < ttlMs) return hit.value as T;
+  const pending = inflight.get(url);
+  if (pending) return pending as Promise<T>;
+  const p = yfRaw<T>(url)
+    .then((v) => {
+      cache.set(url, { at: Date.now(), value: v });
+      return v;
+    })
+    .finally(() => inflight.delete(url));
+  inflight.set(url, p);
+  return p;
+}
+
 
 export type ChartResult = {
   symbol: string;
