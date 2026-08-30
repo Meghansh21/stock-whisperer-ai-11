@@ -52,8 +52,8 @@ const U = (
   name,
   sector,
   industry,
-  upstream: SECTOR_DRIVERS[sector]?.upstream ?? SECTOR_DRIVERS.Other.upstream,
-  policy: SECTOR_DRIVERS[sector]?.policy ?? SECTOR_DRIVERS.Other.policy,
+  upstream: SECTOR_DRIVERS[sector]?.upstream ?? SECTOR_DRIVERS["Other"]!.upstream,
+  policy: SECTOR_DRIVERS[sector]?.policy ?? SECTOR_DRIVERS["Other"]!.policy,
 });
 
 export const UNIVERSE: UniverseEntry[] = [

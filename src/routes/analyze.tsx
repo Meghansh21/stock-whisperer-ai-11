@@ -27,7 +27,7 @@ import { analyzeStock } from "@/lib/market.functions";
 import { RISK_RULES, inr } from "@/lib/risk";
 
 export const Route = createFileRoute("/analyze")({
-  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : undefined }),
+  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s['q'] === 'string' ? (s['q'] as string) : undefined }),
   head: () => ({
     meta: [
       { title: "Stock Analyzer — SmallCap Signal" },
