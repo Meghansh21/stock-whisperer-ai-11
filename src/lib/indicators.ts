@@ -66,7 +66,7 @@ export function macd(v: number[]) {
 
 export function atr(c: Candle[], p = 14): (number | null)[] {
   const tr = c.map((x, i) =>
-    i === 0 ? x.h - x.l : Math.max(x.h - x.l, Math.abs(x.h - c[i - 1].c), Math.abs(x.l - c[i - 1].c)),
+    i === 0 ? x.h - x.l : Math.max(x.h - x.l, Math.abs(x.h - c[i - 1]!.c), Math.abs(x.l - c[i - 1]!.c)),
   );
   return sma(tr, p);
 }
@@ -102,8 +102,8 @@ function pivots(c: Candle[], span = 3) {
   const lo: { i: number; p: number }[] = [];
   for (let i = span; i < c.length - span; i++) {
     const w = c.slice(i - span, i + span + 1);
-    if (c[i].h >= Math.max(...w.map((x) => x.h))) hi.push({ i, p: c[i].h });
-    if (c[i].l <= Math.min(...w.map((x) => x.l))) lo.push({ i, p: c[i].l });
+    if (c[i]!.h >= Math.max(...w.map((x) => x.h))) hi.push({ i, p: c[i]!.h });
+    if (c[i]!.l <= Math.min(...w.map((x) => x.l))) lo.push({ i, p: c[i]!.l });
   }
   return { hi, lo };
 }
@@ -115,7 +115,7 @@ export function detectPatterns(c: Candle[]): Pattern[] {
   const close = c.map((x) => x.c);
   const vol = c.map((x) => x.v);
   const n = c.length;
-  const px = close[n - 1];
+  const px = close[n - 1]!;
   const s20 = last(sma(close, 20));
   const s50 = last(sma(close, 50));
   const s200 = c.length >= 200 ? last(sma(close, 200)) : null;
@@ -151,7 +151,7 @@ export function detectPatterns(c: Candle[]): Pattern[] {
   if (last(vol) > 2 * avgVol20)
     out.push({
       name: "Volume Spike",
-      kind: close[n - 1] > close[n - 2] ? "bullish" : "bearish",
+      kind: close[n - 1]! > close[n - 2]! ? "bullish" : "bearish",
       strength: 0.65,
       detail: `Traded ${(last(vol) / avgVol20).toFixed(1)}x the 20-day average volume — institutional footprint.`,
     });
@@ -160,24 +160,30 @@ export function detectPatterns(c: Candle[]): Pattern[] {
 
   // --- Double bottom / double top
   if (lo.length >= 2) {
-    const [a, b] = lo.slice(-2);
+    const a = lo[lo.length - 2]!;
+    const b = lo[lo.length - 1]!;
     if (b.i > n - 40 && Math.abs(pct(b.p, a.p)) < 3 && b.i - a.i > 8 && px > Math.max(a.p, b.p) * 1.03)
       out.push({ name: "Double Bottom", kind: "bullish", strength: 0.8, detail: `Two lows near ₹${a.p.toFixed(2)} held and price has reclaimed the neckline.` });
   }
   if (hi.length >= 2) {
-    const [a, b] = hi.slice(-2);
+    const a = hi[hi.length - 2]!;
+    const b = hi[hi.length - 1]!;
     if (b.i > n - 40 && Math.abs(pct(b.p, a.p)) < 3 && b.i - a.i > 8 && px < Math.min(a.p, b.p) * 0.97)
       out.push({ name: "Double Top", kind: "bearish", strength: 0.8, detail: `Rejected twice near ₹${a.p.toFixed(2)} and has lost the neckline.` });
   }
 
   // --- Head & shoulders (3 pivot highs, middle highest)
   if (hi.length >= 3) {
-    const [l1, h2, r3] = hi.slice(-3);
+    const l1 = hi[hi.length - 3]!;
+    const h2 = hi[hi.length - 2]!;
+    const r3 = hi[hi.length - 1]!;
     if (h2.p > l1.p && h2.p > r3.p && Math.abs(pct(r3.p, l1.p)) < 5 && r3.i > n - 45)
       out.push({ name: "Head & Shoulders", kind: "bearish", strength: 0.7, detail: "Distribution topping structure — a close under the neckline confirms it." });
   }
   if (lo.length >= 3) {
-    const [l1, h2, r3] = lo.slice(-3);
+    const l1 = lo[lo.length - 3]!;
+    const h2 = lo[lo.length - 2]!;
+    const r3 = lo[lo.length - 1]!;
     if (h2.p < l1.p && h2.p < r3.p && Math.abs(pct(r3.p, l1.p)) < 5 && r3.i > n - 45)
       out.push({ name: "Inverse Head & Shoulders", kind: "bullish", strength: 0.7, detail: "Accumulation base — a breakout above the neckline confirms it." });
   }
@@ -198,14 +204,14 @@ export function detectPatterns(c: Candle[]): Pattern[] {
   if (wNow != null && wHist.length > 30 && wNow <= Math.min(...wHist) * 1.15)
     out.push({ name: "Bollinger Squeeze", kind: "neutral", strength: 0.55, detail: "Volatility has compressed to a multi-month low — an expansion move is usually imminent." });
 
-  const run = pct(close[n - 1], close[Math.max(0, n - 30)]);
-  const pull = pct(close[n - 1], Math.max(...close.slice(-12)));
+  const run = pct(close[n - 1]!, close[Math.max(0, n - 30)]!);
+  const pull = pct(close[n - 1]!, Math.max(...close.slice(-12)));
   if (run > 15 && pull > -8 && pull < -2)
     out.push({ name: "Bull Flag", kind: "bullish", strength: 0.65, detail: "Shallow orderly pullback after a sharp advance — continuation setup." });
 
   // --- Candlestick signals
-  const a1 = c[n - 1];
-  const a2 = c[n - 2];
+  const a1 = c[n - 1]!;
+  const a2 = c[n - 2]!;
   if (a1.c > a1.o && a2.c < a2.o && a1.c >= a2.o && a1.o <= a2.c)
     out.push({ name: "Bullish Engulfing", kind: "bullish", strength: 0.55, detail: "Today's up-candle fully engulfs yesterday's down-candle." });
   if (a1.c < a1.o && a2.c > a2.o && a1.o >= a2.c && a1.c <= a2.o)
@@ -227,21 +233,23 @@ export function detectPatterns(c: Candle[]): Pattern[] {
   if (r != null && r < 30) out.push({ name: "RSI Oversold", kind: "bullish", strength: 0.4, detail: `RSI at ${r.toFixed(0)} — washed out, bounce risk for shorts.` });
   const rs = rsi(close);
   if (lo.length >= 2) {
-    const [a, b] = lo.slice(-2);
-    const ra = rs[a.i];
-    const rb = rs[b.i];
+    const a = lo[lo.length - 2]!;
+    const b = lo[lo.length - 1]!;
+    const ra = rs[a.i]!;
+    const rb = rs[b.i]!;
     if (ra != null && rb != null && b.p < a.p && rb > ra)
       out.push({ name: "Bullish RSI Divergence", kind: "bullish", strength: 0.65, detail: "Price made a lower low but momentum did not — selling pressure is fading." });
   }
   if (hi.length >= 2) {
-    const [a, b] = hi.slice(-2);
-    const ra = rs[a.i];
-    const rb = rs[b.i];
+    const a = hi[hi.length - 2]!;
+    const b = hi[hi.length - 1]!;
+    const ra = rs[a.i]!;
+    const rb = rs[b.i]!;
     if (ra != null && rb != null && b.p > a.p && rb < ra)
       out.push({ name: "Bearish RSI Divergence", kind: "bearish", strength: 0.65, detail: "New price high on weaker momentum — rally is tiring." });
   }
   const mh = last(m.hist);
-  const mhPrev = m.hist[n - 2];
+  const mhPrev = m.hist[n - 2]!;
   if (mh != null && mhPrev != null) {
     if (mh > 0 && mhPrev <= 0) out.push({ name: "MACD Bullish Crossover", kind: "bullish", strength: 0.6, detail: "MACD crossed above its signal line." });
     if (mh < 0 && mhPrev >= 0) out.push({ name: "MACD Bearish Crossover", kind: "bearish", strength: 0.6, detail: "MACD crossed below its signal line." });
@@ -278,7 +286,7 @@ export type TechSnapshot = {
 export function analyseCandles(c: Candle[]): TechSnapshot {
   const close = c.map((x) => x.c);
   const n = c.length;
-  const at = (k: number) => close[Math.max(0, n - 1 - k)];
+  const at = (k: number) => close[Math.max(0, n - 1 - k)]!;
   const patterns = detectPatterns(c);
   const bull = patterns.filter((p) => p.kind === "bullish").reduce((a, p) => a + p.strength, 0);
   const bear = patterns.filter((p) => p.kind === "bearish").reduce((a, p) => a + p.strength, 0);
@@ -288,7 +296,7 @@ export function analyseCandles(c: Candle[]): TechSnapshot {
   const s50 = last(sma(close, 50));
   const s200 = n >= 200 ? last(sma(close, 200)) : null;
   const a = last(atr(c));
-  const px = close[n - 1];
+  const px = close[n - 1]!;
 
   let score = (bull - bear) * 18;
   if (r != null) score += (r - 50) * 0.5;
