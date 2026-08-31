@@ -10,23 +10,51 @@ const cache = new Map<string, { at: number; value: unknown }>();
 const inflight = new Map<string, Promise<unknown>>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// The feed hands out a session cookie; without it the endpoints answer 429.
+let cookie: { value: string; at: number } | null = null;
+
+async function getCookie(force = false): Promise<string> {
+  if (!force && cookie && Date.now() - cookie.at < 20 * 60_000) return cookie.value;
+  try {
+    const res = await fetch("https://fc.yahoo.com", { headers: { "User-Agent": UA } });
+    const raw = res.headers.getSetCookie?.() ?? [];
+    const single = res.headers.get("set-cookie");
+    const list = raw.length ? raw : single ? [single] : [];
+    const value = list.map((c) => c.split(";")[0]).join("; ");
+    if (!value) throw new Error("no cookie");
+    console.log("[yf] cookie len", value.length);
+    cookie = { value, at: Date.now() };
+    return value;
+  } catch (e) {
+    console.log("[yf] cookie fail", String(e));
+    return cookie?.value ?? "";
+  }
+}
+
 async function yfRaw<T>(url: string): Promise<T> {
   let lastErr: Error | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    // Rotate between the two public hosts — their rate-limit buckets differ.
-    const target = attempt === 0 ? url : url.replace("query1.", "query2.").replace("query2.", attempt === 1 ? "query1." : "query2.");
-    const res = await fetch(target, { headers: { "User-Agent": UA, Accept: "application/json" } });
+  // The feed throttles per header fingerprint, so rotate host + header shape.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const target = attempt % 2 === 0 ? url : url.replace("query1.", "query2.");
+    let headers: Record<string, string> = {};
+    if (attempt % 2 === 1) {
+      const ck = await getCookie(attempt > 2);
+      headers = { "User-Agent": UA, Accept: "application/json", ...(ck ? { Cookie: ck } : {}) };
+    }
+    const res = await fetch(target, { headers });
     if (res.ok) return (await res.json()) as T;
     lastErr = new Error(
       res.status === 429
-        ? "Market data feed is rate limiting us right now — wait a few seconds and retry."
+        ? "Market data feed is throttling us — wait a few seconds and try again."
         : `Market data request failed (${res.status})`,
     );
     if (res.status !== 429 && res.status < 500) break;
-    await sleep(600 * (attempt + 1));
+    await sleep(400 * (attempt + 1));
   }
   throw lastErr ?? new Error("Market data request failed");
 }
+
+
 
 async function yf<T>(url: string, ttlMs = 5 * 60_000): Promise<T> {
   const hit = cache.get(url);

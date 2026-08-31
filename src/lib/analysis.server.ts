@@ -81,7 +81,7 @@ export async function runAnalysis(input: {
 
   const peerEntries = competitorsFor(hit.symbol, known?.industry, sector);
   const [peers, search] = await Promise.all([
-    mapLimited(peerEntries, 3, async (p) => {
+    mapLimited(peerEntries, 2, async (p) => {
       try {
         const c = await fetchChart(p.symbol, "6mo", "1d");
         const s = analyseCandles(c.candles);
@@ -199,8 +199,8 @@ export type DashboardData = {
 };
 
 export async function runDashboard(): Promise<DashboardData> {
-  const picks = UNIVERSE.slice(0, 30);
-  const quotes = await mapLimited(picks, 6, (u) =>
+  const picks = UNIVERSE.slice(0, 24);
+  const quotes = await mapLimited(picks, 3, (u) =>
     fetchQuoteLite(u.symbol, u.name).then((q) => (q ? { ...q, sector: u.sector } : null)),
   );
   const movers = quotes.filter((q): q is QuoteLite & { sector: string } => q !== null);
@@ -246,7 +246,7 @@ Rules: equities only — never index, F&O or forex. Be concrete with numbers. Ke
 }
 
 export async function runQuotes(symbols: string[]) {
-  const quotes = await mapLimited(symbols, 6, (s) =>
+  const quotes = await mapLimited(symbols, 3, (s) =>
     fetchQuoteLite(s, UNIVERSE_BY_SYMBOL.get(s)?.name ?? s.replace(/\.(NS|BO)$/i, "")),
   );
   return quotes.filter((q): q is QuoteLite => q !== null);
