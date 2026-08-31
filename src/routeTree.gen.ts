@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as CoachRouteImport } from './routes/coach'
-import { Route as ApiPublicYfdebugRouteImport } from './routes/api/public/yfdebug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,44 +28,35 @@ const CoachRoute = CoachRouteImport.update({
   path: '/coach',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicYfdebugRoute = ApiPublicYfdebugRouteImport.update({
-  id: '/api/public/yfdebug',
-  path: '/api/public/yfdebug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analyze': typeof AnalyzeRoute
   '/coach': typeof CoachRoute
-  '/api/public/yfdebug': typeof ApiPublicYfdebugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analyze': typeof AnalyzeRoute
   '/coach': typeof CoachRoute
-  '/api/public/yfdebug': typeof ApiPublicYfdebugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analyze': typeof AnalyzeRoute
   '/coach': typeof CoachRoute
-  '/api/public/yfdebug': typeof ApiPublicYfdebugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analyze' | '/coach' | '/api/public/yfdebug'
+  fullPaths: '/' | '/analyze' | '/coach'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analyze' | '/coach' | '/api/public/yfdebug'
-  id: '__root__' | '/' | '/analyze' | '/coach' | '/api/public/yfdebug'
+  to: '/' | '/analyze' | '/coach'
+  id: '__root__' | '/' | '/analyze' | '/coach'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyzeRoute: typeof AnalyzeRoute
   CoachRoute: typeof CoachRoute
-  ApiPublicYfdebugRoute: typeof ApiPublicYfdebugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,13 +82,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoachRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/yfdebug': {
-      id: '/api/public/yfdebug'
-      path: '/api/public/yfdebug'
-      fullPath: '/api/public/yfdebug'
-      preLoaderRoute: typeof ApiPublicYfdebugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -106,7 +89,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyzeRoute: AnalyzeRoute,
   CoachRoute: CoachRoute,
-  ApiPublicYfdebugRoute: ApiPublicYfdebugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
